@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SCR</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+  </head>
+  <style>
+		body {
+			background-image: url('../static/background_crops.jpg');
+   			background-size: cover;
+    		background-position: center;
+    		background-attachment: fixed;
+        }
+		
+
+		h1 {
+			color: rgb(10, 5, 1);
+			text-align: center;
+		}
+
+		.warning {
+			color: red;
+			font-weight: bold;
+			text-align: center;
+		}
+		.card{
+		margin-left:410px;
+		margin-top: 20px;
+		color: white;
+		}
+		.container {
+            background: rgba(0, 0, 0, 0.5); 
+            font-weight: bold;
+            padding-bottom: 10px;
+            border-radius: 15px;
+        }
+
+ 
+        
+		label,.neon {
+			color: #ffffff;
+			text-shadow:
+				0 0 1px #fff,      
+				0 0 2px #fff,      
+				0 0 5px #0ff,      
+				0 0 7px #0ff;      
+			font-weight: 400;
+			text-align: center;
+		}
+
+
+        .form-control {
+            background: rgba(0, 0, 0, 0.5); 
+        }
+		.form-control:focus {
+			background: rgba(0, 0, 0, 0.5); 
+    		outline: none;
+    		box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);;
+    		border-color: initial; /* or a color of your choice */
+		}
+		 
+		.form-control:hover {
+			background: rgba(255, 255, 255, 0.5);	
+    	border-color: #ffffff; /* Green border on hover */
+    	box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); /* Slight green glow */
+    	transition: all 0.1s ease; /* Smooth transition */
+		transform: scale(1.05); /* Zoom in slightly */
+		}
+		
+		/* Disabled button (neon red, non-hoverable) */
+		.btn.btn-primary.btn-lg {
+			background: rgba(0, 0, 0, 0.5); 
+			border-color: #ffffff;
+		}
+
+
+
+
+		/* Hover effect for enabled button */
+		button:enabled:hover {
+			transform: scale(1.05); /* Zoom in the button slightly on hover */
+			transition: all 0.3s ease; /* Smooth zoom transition */
+		}
+
+		/* Chrome, Safari, Edge, Opera */
+		input::-webkit-outer-spin-button,
+		input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+		}
+
+  </style>
+
+  <body style="background-color: gainsboro;">
+
+    <div class="container my-3 mt-3">
+      <h1 class="neon">🌱Smart Crop Recommendations<span class="text-success">🌱</span></h1><br>
+
+      <!-- Form -->
+      <form action="/predict" method="POST" id="cropForm">
+          <div class="row">
+              <div class="col-md-4">
+                <label for="Nitrogen">Nitrogen</label>
+                <input type="number" id="Nitrogen" name="Nitrogen" placeholder="[0-150] - Integer" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                <label for="Phosporus">Phosphorus</label>
+                <input type="number" id="Phosporus" name="Phosporus" placeholder="[0-150] - Integer" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                <label for="Potassium">Potassium</label>
+                <input type="number" id="Potassium" name="Potassium" placeholder="[0-220] - Integer" class="form-control" required>
+              </div>
+          </div>
+
+          <div class="row mt-4">
+              <div class="col-md-4">
+                <label for="Temperature">Temperature</label>
+                <input type="number" id="Temperature" name="Temperature" step=0.00001 placeholder="[0-50]°C - Float" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                <label for="Humidity">Humidity</label>
+                <input type="number" id="Humidity" name="Humidity" step=0.00001 placeholder="[0-100]% - Float" class="form-control" required>
+              </div>
+              <div class="col-md-4">
+                <label for="pH">pH</label>
+                <input type="number" id="Ph" name="Ph" step=0.00001 placeholder="[0-14] - Float" class="form-control" required>
+              </div>
+          </div>
+
+          <div class="row mt-4">
+              <div class="col-md-4">
+                <label for="Rainfall">Rainfall</label>
+                <input type="number" id="Rainfall" step=0.00001 name="Rainfall" placeholder="[0-320]mm - Float" class="form-control" required>
+              </div>
+          </div>
+
+          <div class="row mt-4">
+              <div class="col-md-12 text-center">
+                <button type="submit" class="btn btn-primary btn-lg" id="getRecommendationBtn" disabled>Get Recommendation</button>
+              </div>
+          </div>
+      </form>
+
+      {% if result %}
+       
+          <div class="card-body"><br><br>
+            <h2 class="neon">🌱Best recommended crop for cultivation is : {{ result[0] }}🌱</h2>
+          </div>
+     
+      {% endif %}
+    </div>
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+
+			// Redirect to index page on refresh
+            window.onbeforeunload = function() {
+                window.location.href = '/index.html'; // Change this to your index page URL
+            };
+			const inputs = document.querySelectorAll('.form-control');
+			const submitButton = document.getElementById('getRecommendationBtn');
+	
+			// Define ranges for each input
+			const ranges = {
+				'Nitrogen': [0, 150],
+				'Phosporus': [0, 150],
+				'Potassium': [0, 220],
+				'Temperature': [0, 50], // in °C
+				'Humidity': [0, 100], // in %
+				'Ph': [0, 14],
+				'Rainfall': [0, 320] // in mm
+			};
+	
+			function validateInput(inputElement) {
+				const name = inputElement.name;
+				const value = parseFloat(inputElement.value);
+	
+				// Only validate if a value has been entered
+				if (value === "" || isNaN(value)) {
+					inputElement.style.borderColor = '';
+					inputElement.style.color = '';
+					return false;
+				} 
+
+                // Check if the value is an integer for Nitrogen, Phosphorus, and Potassium
+                if (['Nitrogen', 'Phosporus', 'Potassium'].includes(name) && !Number.isInteger(value)) {
+                    inputElement.style.borderColor = 'red';
+                    inputElement.style.color = 'red';
+                    return false;
+                }
+
+	
+				// Validate if the entered value is within range
+				if (value < ranges[name][0] || value > ranges[name][1]) {
+					inputElement.style.borderColor = 'red';
+					inputElement.style.color = 'red';
+					inputElement.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // Neon red
+					inputElement.style.borderColor = 'rgba(255, 0, 0, 1)';
+					return false;
+				} else {
+					inputElement.style.borderColor = 'green';
+					inputElement.style.color = 'green';
+					inputElement.style.backgroundColor = 'rgba(0, 0, 0, 0.5)'; // Neon green
+					inputElement.style.borderColor = 'rgba(0, 255, 0, 1)';
+					return true;
+				}
+			}
+	
+			function validateForm() {
+				let allValid = true;
+				inputs.forEach(input => {
+					if (input.value.trim() !== "") {
+						const valid = validateInput(input);
+						if (!valid) {
+							allValid = false;
+						}
+					} else {
+						allValid = false; // Consider empty inputs as invalid
+					}
+				});
+				
+				// Enable or disable button based on validation
+				submitButton.disabled = !allValid;
+				updateButtonStyle(); // Call to update the button style based on validation
+			}
+	
+			// Function to update button style based on enabled or disabled state
+			function updateButtonStyle() {
+				if (submitButton.disabled) {
+					submitButton.style.backgroundColor = 'rgba(255, 0, 0, 0.7)'; // Neon red
+					submitButton.style.borderColor = 'rgba(255, 0, 0, 0.7)';
+					submitButton.style.color = 'white';
+					submitButton.style.textShadow = `
+						0 0 5px rgba(255, 0, 0, 1),
+						0 0 10px rgba(255, 0, 0, 1),
+						0 0 20px rgba(255, 0, 0, 1),
+						0 0 30px rgba(255, 0, 0, 1)`;
+					submitButton.style.cursor = 'not-allowed'; // Disable hover
+					submitButton.style.pointerEvents = 'none';
+				} else {
+					submitButton.style.backgroundColor = 'rgba(0, 255, 0, 0.7)'; // Neon green
+					submitButton.style.borderColor = 'rgba(0, 255, 0, 0.7)';
+					submitButton.style.color = 'white';
+					submitButton.style.textShadow = `
+						0 0 5px rgba(0, 255, 0, 1),
+						0 0 10px rgba(0, 255, 0, 1),
+						0 0 20px rgba(0, 255, 0, 1),
+						0 0 30px rgba(0, 255, 0, 1)`;
+					submitButton.style.cursor = 'pointer'; // Enable hover
+					submitButton.style.pointerEvents = 'auto';
+				}
+			}
+	
+			inputs.forEach(input => {
+				// Validate when input loses focus (blur event) or when a value is entered
+				input.addEventListener('blur', function() {
+					validateInput(input);
+					validateForm(); // Check if all fields are valid
+				});
+	
+				// Also validate when an input changes to handle the scenario when user clears the field
+				input.addEventListener('input', function() {
+					if (input.value.trim() === "") {
+						input.style.borderColor = '';
+						input.style.color = '';
+					}
+					validateForm();
+				});
+			});
+		});
+	</script>
+	
+	
+
+     </body>
+</html>
